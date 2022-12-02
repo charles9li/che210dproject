@@ -1,5 +1,5 @@
-"""_potentials.py: Contains various base classes that all potentials inherit from."""
-__all__ = ['_PairPotential', '_BondedPairPotential']
+"""_potential_base_classes.py: Contains various base classes that all potentials inherit from."""
+__all__ = ['_Potential', '_PairPotential', '_BondedPairPotential']
 
 from collections import defaultdict
 import itertools
@@ -112,7 +112,7 @@ class _Potential(object):
 
         Parameters
         ----------
-        *bead_names : tuple of str
+        *bead_names : str
             Variable length tuple of bead names.
         **kwargs : dict of str: float
             Values of parameters in the interaction.

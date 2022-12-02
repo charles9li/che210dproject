@@ -162,3 +162,6 @@ cython_debug/
 # IntelliJ files
 che210dproject.iml
 .intellijrc
+
+# image files
+*.png

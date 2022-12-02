@@ -3,6 +3,8 @@ states.
 """
 __all__ = ['State', 'Simulation']
 
+import time
+
 import numpy as np
 
 from projectlib import utils
@@ -116,6 +118,7 @@ class Simulation(object):
     def step(self, steps):
         steps_elapsed = 0
         thermo_frequency = 1000
+        start_time = time.time()
         while steps > 0:
             if steps > thermo_frequency:
                 steps_to_take = thermo_frequency
@@ -126,20 +129,4 @@ class Simulation(object):
             steps_elapsed += steps_to_take
             self.state = state
             temperature = utils.compute_instantaneous_temperature(state.velocities)
-            print(steps_elapsed, state.potential_energy, state.kinetic_energy, temperature)
-
-
-if __name__ == '__main__':
-    from projectlib.components import BeadType, Chain
-    from system import System
-    from projectlib.integrators import LangevinIntegratorLAMMPS
-
-    bead_type = BeadType("A")
-    molecule = Chain("A", ["A"])
-    system = System(box_lengths=np.array([5, 5, 5]))
-    system.add_bead_type(bead_type)
-    system.add_chain(molecule, num=100)
-    integrator = LangevinIntegratorLAMMPS()
-    simulation = Simulation(system, integrator)
-    simulation.initialize()
-    simulation.step(100000)
+            print(steps_elapsed, state.potential_energy, state.kinetic_energy, temperature, time.time() - start_time)

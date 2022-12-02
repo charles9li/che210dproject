@@ -17,7 +17,7 @@ def _step_integrator(
         step_size, *args
 ):
     """Numba-accelerated helper function used to take a time step. Every
-    integrator will need to implement.
+    integrator will need to implement this.
 
     Parameters
     ----------
@@ -55,8 +55,8 @@ class _Integrator(object):
     step_size : int, default=0.002
         Time step used for integration.
     simulation : projectlib.Simulation
-        Simulation object that is used to run a simulation. This attribute will
-        be set when this integrator is added to a simulation.
+        Used to run a simulation. This attribute will be set when this
+        integrator is added to a simulation.
     """
     STEP_FUNCTION = staticmethod(_step_integrator)
 
@@ -203,14 +203,14 @@ def _step_langevin(
 
     # propagate velocity and positions
     velocities = c1 * velocities + c2 * np.random.randn(*positions.shape)
-    positions = positions + velocities * step_size + 0.5 * forces * step_size**2
-    velocities = velocities + 0.5 * forces * step_size
+    positions = positions + velocities * step_size + 0.5 * step_size * step_size * forces
+    velocities = velocities + 0.5 * step_size * forces
 
     # compute new forces
     forces, potential_energy = force_energy_function(positions)
 
-    # finish propagation of velocities and positions
-    velocities = velocities + 0.5 * forces * step_size
+    # finish propagation of velocities
+    velocities = velocities + 0.5 * step_size * forces
     velocities = c1 * velocities + c2 * np.random.randn(*positions.shape)
 
     return positions, velocities, forces, potential_energy
