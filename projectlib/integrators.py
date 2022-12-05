@@ -78,6 +78,7 @@ class _Integrator(object):
         """
         # get current state of simulation
         state = self.simulation.state
+        curr_steps = state.steps
         positions = state.positions
         velocities = state.velocities
         forces = state.forces
@@ -95,7 +96,7 @@ class _Integrator(object):
 
         # return state
         kinetic_energy = projectlib.utils.compute_kinetic_energy(velocities)
-        return projectlib.State(positions, velocities, forces, potential_energy, kinetic_energy)
+        return projectlib.State(curr_steps + steps, positions, velocities, forces, potential_energy, kinetic_energy)
 
 
 @jit(nopython=True)

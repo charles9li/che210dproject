@@ -3,7 +3,9 @@ import unittest
 import numpy as np
 import matplotlib.pyplot as plt
 
-from projectlib import BeadType, ForceField, WallLJWCA
+from projectlib.bead_type import BeadType
+from projectlib.forcefield import ForceField
+from projectlib.potentials import WallLJWCA
 
 
 def _compute_force_energy(
@@ -13,8 +15,8 @@ def _compute_force_energy(
 ):
     # create force field
     ff = ForceField()
-    bead_type = BeadType("A")
-    ff.add_bead_type(bead_type)
+    if not BeadType.has_bead_type("A"):
+        BeadType("A")
 
     # create LJ potential and add to force field
     wall_lj_potential = WallLJWCA()
@@ -24,6 +26,7 @@ def _compute_force_energy(
         lambda_lj=lambda_lj, lambda_wca=lambda_wca
     )
     ff.add_potential(wall_lj_potential)
+    wall_lj_potential.initialize()
 
     # initialize force and energy
     force = np.zeros_like(x)
@@ -68,6 +71,7 @@ class TestWallLJWCA(unittest.TestCase):
                 plt.savefig("test_wall_lj_force.png")
             else:
                 plt.savefig('test_wall_lj_energy.png')
+        plt.close('all')
 
     def test_wall_wca(self):
         lower_bound = 0.0
@@ -95,7 +99,36 @@ class TestWallLJWCA(unittest.TestCase):
                 plt.savefig("test_wall_wca_force.png")
             else:
                 plt.savefig('test_wall_wca_energy.png')
-        plt.show()
+        plt.close('all')
+
+    def test_wall_lj_plus_wca(self):
+        lower_bound = 0.0
+        # upper_bound = 20.0
+        upper_bound = 6.6943
+        x = np.linspace(lower_bound + 0.995, upper_bound - 0.995, 1000)
+        plt.figure("force")
+        plt.axhline(linestyle='--', c='k')
+        plt.figure("energy")
+        plt.axhline(linestyle='--', c='k')
+        for lambda_lj in [0.0, 0.25, 0.5, 0.75, 1.0]:
+            force, energy = _compute_force_energy(x, lower_bound=lower_bound, upper_bound=upper_bound, lambda_lj=lambda_lj, lambda_wca=1.0-lambda_lj)
+            plt.figure("force")
+            plt.plot(x, force, label=f"{lambda_lj}")
+            plt.figure("energy")
+            plt.plot(x, energy, label=f"{lambda_lj}")
+        for i, fig in enumerate(["force", "energy"]):
+            plt.figure(fig)
+            plt.legend(frameon=False, title=r"$\lambda_{lj}$")
+            plt.xlabel(r"$x / \sigma$")
+            if i == 0:
+                plt.ylabel(r"$f_x$")
+            else:
+                plt.ylabel(r"$u_{wall}$")
+            if i == 0:
+                plt.savefig("test_wall_lj+wca_force.png")
+            else:
+                plt.savefig('test_wall_lj+wca_energy.png')
+        plt.close('all')
 
 
 if __name__ == '__main__':

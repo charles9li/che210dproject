@@ -165,3 +165,6 @@ che210dproject.iml
 
 # image files
 *.png
+
+# pdb files
+*.pdb

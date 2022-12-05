@@ -4,195 +4,83 @@ from numba import jit
 
 class System(object):
 
-    def __init__(self, box_lengths, cutoff=2.5):
-        self._force_field = None
-        self.box_lengths = box_lengths
-        self.cutoff = cutoff
-        self._bead_types = {}
-        self._chains = {}
-        self._interactions = {}
-
-        self._num_beads = None
-        self._bead_species = None
-        self._bead_species_indices = None
-        self._chain_names = None
-        self._chain_indices = None
+    def __init__(self, topology, force_field):
+        self.topology = topology
+        self.force_field = force_field
         self._force_energy_function = None
 
-    @property
-    def force_field(self):
-        return self._force_field
+    def initialize(self):
+        self.force_field.initialize()
+        self._create_force_energy_function()
 
-    @force_field.setter
-    def force_field(self, force_field):
-        self._force_field = force_field
-        force_field.system = self
+    def _create_force_energy_function(self):
+        # get potentials from force field
+        wall_ljwca_potential = self.force_field.wall_ljwca_potential
+        ljwca_potential = self.force_field.ljwca_potential
+        harmonic_bond_potential = self.force_field.harmonic_bond_potential
 
-    def add_bead_type(self, bead_type):
-        self._bead_types[bead_type.name] = bead_type
+        # determine if whether to compute a potential
+        compute_wall_ljwca = wall_ljwca_potential is not None
+        compute_ljwca = ljwca_potential is not None
+        compute_harmonic_bond = harmonic_bond_potential is not None
 
-    def get_bead_type(self, bead_name):
-        return self._bead_types[bead_name]
+        # get the functions used to compute forces and energies from each potential
+        wall_ljwca_force_energy_function = wall_ljwca_potential.force_energy_function if compute_wall_ljwca else None
+        ljwca_force_energy_function = ljwca_potential.force_energy_function if compute_ljwca else None
+        harmonic_bond_force_energy_function = harmonic_bond_potential.force_energy_function if compute_harmonic_bond else None
 
-    def add_chain(self, chain, num=1):
-        self._chains[chain.name] = [chain, num]
-
-    def get_chain(self, chain_name):
-        return self._chains[chain_name][0]
-
-    def get_chain_num(self, chain_name):
-        return self._chains[chain_name][1]
-
-    def set_chain_num(self, chain_name, num=1):
-        self._chains[chain_name][1] = num
-
-    @property
-    def n_beads(self):
-        return sum([chain.n_beads * num for chain, num in self._chains.values()])
-
-    @property
-    def all_bead_names(self):
-        all_bead_names = []
-        for chain, num in self._chains.values():
-            for _ in range(num):
-                all_bead_names.extend(chain.bead_names)
-        return np.array(all_bead_names, dtype=str)
-
-    @property
-    def all_chain_names(self):
-        all_chain_names = []
-        for chain, num in self._chains.values():
-            for _ in range(num):
-                all_chain_names.append(chain.name)
-        return np.array(all_chain_names, dtype=str)
-
-    # def create_force_energy_function(self):
-    #     # loop through molecules and create lists of bead names and bonds
-    #     bead_names = []
-    #     chain_names = []
-    #     chain_indices = []
-    #     all_bonds = []
-    #     current_chain_index = 0
-    #     for chain, num in self._chains.values():
-    #         chain_names.append(chain.name)
-    #         for _ in range(num):
-    #             num_beads_curr = len(bead_names)
-    #             bead_names.extend(chain.bead_names)
-    #             chain_indices.append(current_chain_index)
-    #             all_bonds.extend(map(lambda x: (x[0]+num_beads_curr, x[1]+num_beads_curr), chain.bonds))
-    #             current_chain_index += 1
-    #     bead_names = np.array(bead_names, dtype=str)
-    #     forcefield_bead_names = list(self.force_field.bead_names)
-    #     bead_species_indices = np.array([forcefield_bead_names.index(bn) for bn in bead_names], dtype=int)
-    #
-    #     # create bonded matrix
-    #     bonded_matrix = np.full((self.n_beads, self.n_beads), False)
-    #     for bond in all_bonds:
-    #         i, j = bond
-    #         bonded_matrix[i, j] = bonded_matrix[j, i] = True
-    #
-    #     cutoff = self.cutoff
-    #     box_lengths = self.box_lengths
-    #     num_beads = self.n_beads
-    #
-    #     default_force = np.zeros(3)
-    #
-    #     @jit(nopython=True)
-    #     def ljts(forces, potential_energy, i, j, r_ij, d_sqd, shift, cutoff_sqd):
-    #         # if d_sqd > cutoff_sqd:
-    #         #     return forces, potential_energy
-    #         inv_d2 = 1. / d_sqd
-    #         inv_d6 = inv_d2 * inv_d2 * inv_d2
-    #         inv_d12 = inv_d6 * inv_d6
-    #         force_ij = r_ij * ((-48. * inv_d12 + 24. * inv_d6) * inv_d2)
-    #         u_ij = 4. * (inv_d12 - inv_d6) + shift
-    #         forces[i, :] += force_ij
-    #         forces[j, :] -= force_ij
-    #         potential_energy += u_ij
-    #         return forces, potential_energy
-    #
-    #     @jit(nopython=True)
-    #     def force_energy_function(positions):
-    #         cutoff_sqd = cutoff * cutoff
-    #         shift = -4. * (cutoff**-12 - cutoff**-6)
-    #         forces = np.zeros_like(positions)
-    #         potential_energy = 0.0
-    #         for i in range(num_beads):
-    #             r_ij_array = positions[:i, :] - positions[i, :]
-    #             r_ij_array = r_ij_array - box_lengths * np.rint(r_ij_array / box_lengths)
-    #             d_sqd_array = np.sum(r_ij_array * r_ij_array, axis=1)
-    #             for j in range(i):
-    #                 d_sqd = d_sqd_array[j]
-    #                 r_ij = r_ij_array[j]
-    #
-    #                 if d_sqd > cutoff_sqd:
-    #                     continue
-    #                 # inv_d2 = 1. / d_sqd
-    #                 # inv_d6 = inv_d2 * inv_d2 * inv_d2
-    #                 # inv_d12 = inv_d6 * inv_d6
-    #                 # force_ij = r_ij * ((-48. * inv_d12 + 24. * inv_d6) * inv_d2)
-    #                 # forces[i, :] += force_ij
-    #                 # forces[j, :] -= force_ij
-    #                 # potential_energy += 4. * (inv_d12 - inv_d6) + shift
-    #
-    #                 forces, potential_energy = ljts(forces, potential_energy, i, j, r_ij, d_sqd, shift, cutoff_sqd)
-    #
-    #         return forces, potential_energy
-    #
-    #     self._force_energy_function = force_energy_function
-    #     return force_energy_function
-
-    def create_force_energy_function(self):
-        # loop through molecules and create lists of bead names and bonds
-        bead_names = []
-        chain_names = []
-        chain_indices = []
-        all_bonds = []
-        current_chain_index = 0
-        for chain, num in self._chains.values():
-            chain_names.append(chain.name)
-            for _ in range(num):
-                num_beads_curr = len(bead_names)
-                bead_names.extend(chain.bead_names)
-                chain_indices.append(current_chain_index)
-                all_bonds.extend(map(lambda x: (x[0]+num_beads_curr, x[1]+num_beads_curr), chain.bonds))
-                current_chain_index += 1
-        bead_names = np.array(bead_names, dtype=str)
-        forcefield_bead_names = list(self.force_field.bead_names)
-        bead_species_indices = np.array([forcefield_bead_names.index(bn) for bn in bead_names], dtype=int)
+        # get the relevant parameters about the system
+        bead_names_in_force_field = list(self.force_field.bead_names)
+        n_beads = self.topology.n_beads
+        box_lengths = self.topology.box_lengths
+        periodicity = np.array(self.topology.periodicity, dtype=float)
+        bead_types = [b.bead_type.name for b in self.topology.beads]
+        bead_species_indices = np.array([bead_names_in_force_field.index(bt) for bt in bead_types])
 
         # create bonded matrix
-        bonded_matrix = np.full((self.n_beads, self.n_beads), False)
-        for bond in all_bonds:
-            i, j = bond
-            bonded_matrix[i, j] = bonded_matrix[j, i] = True
-
-        lj_force_energy = self.force_field._potentials[2][0].force_energy_function
-
-        box_lengths = self.box_lengths
-        num_beads = self.n_beads
+        is_bonded = np.zeros((n_beads, n_beads), dtype=bool)
+        for bond in self.topology.bonds:
+            bead1, bead2 = bond
+            is_bonded[bead1.index, bead2.index] = True
+            is_bonded[bead2.index, bead1.index] = True
 
         @jit(nopython=True)
-        def force_energy_function(positions):
+        def calculate_force_energy(positions):
             forces = np.zeros_like(positions)
             potential_energy = 0.0
-            for i in range(num_beads):
-                position_i = positions[i, :]
-                r_ij_array = positions[:i, :] - position_i
-                r_ij_array = r_ij_array - box_lengths * np.rint(r_ij_array / box_lengths)
+            for i in range(n_beads):
+                r_i = positions[i, :]
+                species_index_i = bead_species_indices[i]
+
+                # compute LJWCA wall
+                if compute_wall_ljwca:
+                    forces, potential_energy = wall_ljwca_force_energy_function(forces, potential_energy,
+                                                                                r_i, i, species_index_i)
+
+                r_ij_array = positions[:i, :] - r_i
+                r_ij_array = r_ij_array - periodicity * box_lengths * np.rint(r_ij_array / box_lengths)
                 d_sqd_array = np.sum(r_ij_array * r_ij_array, axis=1)
                 for j in range(i):
                     d_sqd = d_sqd_array[j]
                     r_ij = r_ij_array[j]
-                    forces, potential_energy = lj_force_energy(forces, potential_energy, r_ij, d_sqd, i, j, bead_species_indices[i], bead_species_indices[j])
+                    species_index_j = bead_species_indices[j]
 
+                    # compute harmonic bond
+                    if compute_harmonic_bond and is_bonded[i, j]:
+                        forces, potential_energy = harmonic_bond_force_energy_function(forces, potential_energy,
+                                                                                       r_ij, d_sqd, i, j,
+                                                                                       species_index_i, species_index_j)
+
+                    # compute LJWCA
+                    if compute_ljwca:
+                        forces, potential_energy = ljwca_force_energy_function(forces, potential_energy,
+                                                                               r_ij, d_sqd, i, j,
+                                                                               species_index_i, species_index_j)
             return forces, potential_energy
 
-        self._force_energy_function = force_energy_function
-        return force_energy_function
+        self._force_energy_function = calculate_force_energy
+        return calculate_force_energy
 
     @property
     def force_energy_function(self):
-        if self._force_energy_function is None:
-            self.create_force_energy_function()
         return self._force_energy_function

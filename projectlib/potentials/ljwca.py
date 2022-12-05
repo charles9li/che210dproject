@@ -2,7 +2,6 @@
 the truncated and shift Lennard-Jones (LJTS) and repulsive
 Weeks-Chandler-Andersen (WCA) potentials.
 """
-import numpy as np
 from numba import jit
 
 from ._potential_base_classes import _PairPotential
@@ -10,9 +9,10 @@ from ._potential_base_classes import _PairPotential
 
 class LJWCA(_PairPotential):
     """Linear combination of the LJTS and repulsive WCA potentials."""
-    PARAMETERS = ['eps', 'sigma', 'cut', 'lambda_lj', 'lambda_wca']
-    DEPENDENT_PARAMETERS = ['sigma2', 'cut2', 'shift_lj']
-    ALL_PARAMETERS = PARAMETERS + DEPENDENT_PARAMETERS
+    PARAMETER_NAMES = ['eps', 'sigma', 'cut', 'lambda_lj', 'lambda_wca']
+    PARAMETER_TYPES = [float] * len(PARAMETER_NAMES)
+    DEPENDENT_PARAMETER_NAMES = ['sigma2', 'cut2', 'shift_lj']
+    DEPENDENT_PARAMETER_TYPES = [float] * len(DEPENDENT_PARAMETER_NAMES)
 
     def add_interaction(
             self, bead_name_1, bead_name_2,
@@ -66,17 +66,15 @@ class LJWCA(_PairPotential):
         for parameter_name, value in dependent_parameter_values.items():
             self.set_parameter_value(parameter_name, value, bead_name_1, bead_name_2, update_dependents=False)
 
-    def create_force_energy_function(self):
-        self._create_if_compute_and_parameter_arrays()
-        if_compute = self._if_compute
-        parameter_array = self._parameter_array
+    def _create_force_energy_function(self):
+        _if_compute = self._interaction_array
 
-        _eps_index = self._get_parameter_index('eps')
-        _sigma2_index = self._get_parameter_index('sigma2')
-        _cut2_index = self._get_parameter_index('cut2')
-        _shift_lj_index = self._get_parameter_index('shift_lj')
-        _lambda_lj_index = self._get_parameter_index('lambda_lj')
-        _lambda_wca_index = self._get_parameter_index('lambda_wca')
+        _eps_array = self._parameter_arrays['eps']
+        _sigma2_array = self._parameter_arrays['sigma2']
+        _cut2_array = self._parameter_arrays['cut2']
+        _shift_lj_array = self._parameter_arrays['shift_lj']
+        _lambda_lj_array = self._parameter_arrays['lambda_lj']
+        _lambda_wca_array = self._parameter_arrays['lambda_wca']
 
         @jit(nopython=True)
         def calculate_force_energy(
@@ -86,16 +84,16 @@ class LJWCA(_PairPotential):
                 species_index_i, species_index_j
         ):
             # return if not computing
-            if not if_compute[species_index_i, species_index_j]:
+            if not _if_compute[species_index_i, species_index_j]:
                 return forces, potential_energy
 
             # get parameters for this interaction
-            eps = parameter_array[species_index_i, species_index_j, _eps_index]
-            sigma2 = parameter_array[species_index_i, species_index_j, _sigma2_index]
-            cut2 = parameter_array[species_index_i, species_index_j, _cut2_index]
-            shift_lj = parameter_array[species_index_i, species_index_j, _shift_lj_index]
-            lambda_lj = parameter_array[species_index_i, species_index_j, _lambda_lj_index]
-            lambda_wca = parameter_array[species_index_i, species_index_j, _lambda_wca_index]
+            eps = _eps_array[species_index_i][species_index_j]
+            sigma2 = _sigma2_array[species_index_i][species_index_j]
+            cut2 = _cut2_array[species_index_i][species_index_j]
+            shift_lj = _shift_lj_array[species_index_i][species_index_j]
+            lambda_lj = _lambda_lj_array[species_index_i][species_index_j]
+            lambda_wca = _lambda_wca_array[species_index_i][species_index_j]
 
             # return if r > cutoff
             if d_sqd > cut2:
@@ -135,4 +133,3 @@ class LJWCA(_PairPotential):
             return forces, potential_energy
 
         self._force_energy_function = calculate_force_energy
-        return calculate_force_energy
