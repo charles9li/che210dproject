@@ -15,16 +15,19 @@ class System(object):
 
     def _create_force_energy_function(self):
         # get potentials from force field
+        harmonic_bias_potential = self.force_field.harmonic_bias_potential
         wall_ljwca_potential = self.force_field.wall_ljwca_potential
         ljwca_potential = self.force_field.ljwca_potential
         harmonic_bond_potential = self.force_field.harmonic_bond_potential
 
         # determine if whether to compute a potential
+        compute_harmonic_bias = harmonic_bias_potential is not None
         compute_wall_ljwca = wall_ljwca_potential is not None
         compute_ljwca = ljwca_potential is not None
         compute_harmonic_bond = harmonic_bond_potential is not None
 
         # get the functions used to compute forces and energies from each potential
+        harmonic_bias_force_energy_function = harmonic_bias_potential.force_energy_function if compute_harmonic_bias else None
         wall_ljwca_force_energy_function = wall_ljwca_potential.force_energy_function if compute_wall_ljwca else None
         ljwca_force_energy_function = ljwca_potential.force_energy_function if compute_ljwca else None
         harmonic_bond_force_energy_function = harmonic_bond_potential.force_energy_function if compute_harmonic_bond else None
@@ -48,6 +51,11 @@ class System(object):
         def calculate_force_energy(positions):
             forces = np.zeros_like(positions)
             potential_energy = 0.0
+
+            # compute harmonic bias
+            if compute_harmonic_bias:
+                forces, potential_energy = harmonic_bias_force_energy_function(forces, potential_energy, positions)
+
             for i in range(n_beads):
                 r_i = positions[i, :]
                 species_index_i = bead_species_indices[i]

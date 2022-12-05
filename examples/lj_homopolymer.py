@@ -1,12 +1,12 @@
 import numpy as np
 
-from projectlib.bead_type import BeadType
-from projectlib.topology import Bead, LinearChain, Topology
-from projectlib.potentials import LJWCA, HarmonicBond
-from projectlib.forcefield import ForceField
-from projectlib.system import System
-from projectlib.integrators import LangevinIntegrator
-from projectlib.simulation import Simulation
+from mdlib.bead_type import BeadType
+from mdlib.topology import Bead, LinearChain, Topology
+from mdlib.potentials import LJWCA, HarmonicBond
+from mdlib.forcefield import ForceField
+from mdlib.system import System
+from mdlib.integrators import LangevinIntegrator
+from mdlib.simulation import Simulation
 
 # parameters
 N = 240

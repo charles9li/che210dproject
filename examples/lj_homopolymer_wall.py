@@ -1,12 +1,12 @@
 import numpy as np
 
-from projectlib.bead_type import BeadType
-from projectlib.topology import Bead, LinearChain, Topology
-from projectlib.potentials import WallLJWCA, LJWCA, HarmonicBond
-from projectlib.forcefield import ForceField
-from projectlib.system import System
-from projectlib.integrators import LangevinIntegrator
-from projectlib.simulation import Simulation
+from mdlib.bead_type import BeadType
+from mdlib.topology import Bead, LinearChain, Topology
+from mdlib.potentials import WallLJWCA, LJWCA, HarmonicBond
+from mdlib.forcefield import ForceField
+from mdlib.system import System
+from mdlib.integrators import LangevinIntegrator
+from mdlib.simulation import Simulation
 
 # parameters
 N = 240
@@ -47,6 +47,12 @@ simulation.initialize()
 simulation.minimize_energy()
 simulation.system.topology.to_pdb("lj_homopolymer_wall_initial.pdb", positions=simulation.state.positions)
 
+# set up reporting
+simulation.thermo_file = "lj_homopolymer_wall_thermo.csv"
+simulation.thermo_frequency = 1000
+simulation.thermo_verbose = True
+simulation.traj_file = "lj_homopolymer_wall_traj.pdb"
+simulation.traj_min_image = True
+
 # run
 simulation.step(10000)
-simulation.system.topology.to_pdb("lj_homopolymer_wall_final.pdb", positions=simulation.state.positions)

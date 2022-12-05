@@ -75,10 +75,8 @@ class WallLJWCA(_Potential):
             # do each bound
             for force_sign, bound in zip([1.0, -1.0], [lower_bound, upper_bound]):
                 # distance from the surface
-                if force_sign == 1.0:
-                    d = r_i[axis] - bound
-                else:
-                    d = bound - r_i[axis]
+                d = np.abs(r_i[axis] - bound)
+                d = max(d, sigma * 1e-30)
 
                 # don't compute if outside LJ cut
                 if d > cut:

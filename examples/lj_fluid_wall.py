@@ -1,12 +1,12 @@
 import numpy as np
 
-from projectlib.bead_type import BeadType
-from projectlib.topology import Bead, Chain, Topology
-from projectlib.potentials import WallLJWCA, LJWCA
-from projectlib.forcefield import ForceField
-from projectlib.system import System
-from projectlib.integrators import LangevinIntegrator
-from projectlib.simulation import Simulation
+from mdlib.bead_type import BeadType
+from mdlib.topology import Bead, Chain, Topology
+from mdlib.potentials import WallLJWCA, LJWCA
+from mdlib.forcefield import ForceField
+from mdlib.system import System
+from mdlib.integrators import LangevinIntegrator
+from mdlib.simulation import Simulation
 
 # parameters
 N = 240
@@ -36,7 +36,7 @@ force_field.add_potential(wall_lj)
 system = System(topology, force_field)
 
 # create integrator
-integrator = LangevinIntegrator(step_size=0.001, temperature=1.0, friction_coefficient=1.0)
+integrator = LangevinIntegrator(step_size=0.002, temperature=1.0, friction_coefficient=1.0)
 
 # create simulation and initialize
 simulation = Simulation(system, integrator)
@@ -44,6 +44,13 @@ simulation.initialize()
 simulation.minimize_energy()
 simulation.system.topology.to_pdb("lj_fluid_wall_initial.pdb", positions=simulation.state.positions)
 
+# set up reporting
+simulation.thermo_file = "lj_fluid_wall_thermo.csv"
+simulation.thermo_frequency = 1000
+simulation.thermo_verbose = True
+simulation.traj_file = "lj_fluid_wall_traj.pdb"
+simulation.traj_frequency = 1000
+simulation.traj_min_image = True
+
 # run
 simulation.step(10000)
-simulation.system.topology.to_pdb("lj_fluid_wall_final.pdb", positions=simulation.state.positions)

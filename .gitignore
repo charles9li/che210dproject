@@ -168,3 +168,6 @@ che210dproject.iml
 
 # pdb files
 *.pdb
+
+# thermo log files
+*.csv

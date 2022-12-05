@@ -7,7 +7,7 @@ import itertools
 import numpy as np
 from numba import jit
 
-from projectlib.bead_type import BeadType
+from mdlib.bead_type import BeadType
 
 
 # =========================================================================

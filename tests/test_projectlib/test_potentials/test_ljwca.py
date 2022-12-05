@@ -3,9 +3,9 @@ import unittest
 import numpy as np
 import matplotlib.pyplot as plt
 
-from projectlib.forcefield import ForceField
-from projectlib.bead_type import BeadType
-from projectlib.potentials import LJWCA
+from mdlib.forcefield import ForceField
+from mdlib.bead_type import BeadType
+from mdlib.potentials import LJWCA
 
 
 def _compute_force_energy(

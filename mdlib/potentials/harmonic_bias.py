@@ -49,20 +49,33 @@ class HarmonicBias(_Potential):
         @jit(nopython=True)
         def calculate_force_energy(forces, potential_energy, positions):
             for _g_index in range(_n_groups):
+                # get bead indices for the group
                 _g_len = _each_group_len[_g_index]
                 _bead_indices = _each_group_indices[_g_index, :_g_len]
+
+                # get positions of each bead in group
                 _group_positions = np.empty((_g_len, 3), dtype=float)
                 for i, _b_index in enumerate(_bead_indices):
                     _group_positions[i, :] = positions[_b_index, :]
-                _center_position = np.mean(_group_positions, axis=1)
+
+                # compute centroid position
+                _center_position = np.zeros(3)
+                for i in range(_g_len):
+                    _center_position += _group_positions[i, :]
+                _center_position = _center_position / float(_g_len)
+
+                # get parameters
                 k = _k_array[_g_index]
                 r0 = _r0_array[_g_index]
                 axis = _axis_array[_g_index]
+
+                # compute forces and energies
                 dr = (_center_position[axis] - r0)
                 potential_energy += 0.5 * k * dr**2
                 force = -k * dr / float(_g_len)
                 for _b_index in _bead_indices:
-                    force[_b_index, axis] += force
+                    forces[_b_index, axis] += force
+
             return forces, potential_energy
 
         self._force_energy_function = calculate_force_energy

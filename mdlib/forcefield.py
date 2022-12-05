@@ -1,6 +1,6 @@
 """forcefield.py: Contains the ForceField class which stores """
-from projectlib.bead_type import BeadType
-from projectlib.potentials import HarmonicBias, WallLJWCA, LJWCA, HarmonicBond
+from mdlib.bead_type import BeadType
+from mdlib.potentials import HarmonicBias, WallLJWCA, LJWCA, HarmonicBond
 
 
 class ForceField(object):
@@ -16,7 +16,7 @@ class ForceField(object):
     def __init__(self):
         self.system = None
 
-        self.harmonic_bias = None
+        self.harmonic_bias_potential = None
         self.wall_ljwca_potential = None
         self.ljwca_potential = None
         self.harmonic_bond_potential = None
@@ -29,7 +29,7 @@ class ForceField(object):
         potential : projectlib.potentials._Potential
         """
         if isinstance(potential, HarmonicBias):
-            self.harmonic_bias = potential
+            self.harmonic_bias_potential = potential
         if isinstance(potential, WallLJWCA):
             self.wall_ljwca_potential = potential
         elif isinstance(potential, LJWCA):
@@ -45,7 +45,7 @@ class ForceField(object):
     @property
     def potentials(self):
         _potentials = []
-        for p in [self.harmonic_bias, self.wall_ljwca_potential, self.ljwca_potential, self.harmonic_bond_potential]:
+        for p in [self.harmonic_bias_potential, self.wall_ljwca_potential, self.ljwca_potential, self.harmonic_bond_potential]:
             if p is not None:
                 _potentials.append(p)
         return _potentials

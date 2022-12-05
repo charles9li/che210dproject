@@ -4,15 +4,17 @@ from mdlib import (
     Bead,
     BeadType,
     ForceField,
+    HarmonicBias,
     HarmonicBond,
     LangevinIntegrator,
     LinearChain,
     LJWCA,
     Simulation,
     System,
-    Topology,
-    WallLJWCA
+    Topology
 )
+
+file_prefix = "block_copolymer_single_chain_harmonic_bias"
 
 # create block copolymer
 bead_type_a = BeadType("A")
@@ -26,7 +28,6 @@ block_copolymer.packmol_instructions.append("fixed 200. 50. 50. 0. 0. 0.")
 topology = Topology()
 topology.add_chain(block_copolymer, n=1)
 topology.box_lengths = np.array([40., 10., 10.])
-topology.periodicity[0] = False
 
 # create LJ potential
 lj = LJWCA()
@@ -40,16 +41,16 @@ harmonic_bond.add_interaction("A", "A")
 harmonic_bond.add_interaction("A", "B")
 harmonic_bond.add_interaction("B", "B")
 
-# create wall potentials
-wall_ljwca = WallLJWCA()
-wall_ljwca.add_interaction("A", eps=1.0, upper_bound=topology.box_lengths[0], cut=7.5, lambda_lj=1.0, lambda_wca=0.0)
-wall_ljwca.add_interaction("B", eps=1.0, upper_bound=topology.box_lengths[0], lambda_lj=0.0, lambda_wca=1.0)
+# create harmonic bias
+harmonic_bias = HarmonicBias()
+group = np.array([b.index for b in list(topology.chains)[0].beads])
+harmonic_bias.add_interaction(group, k=0.5, r0=20.0, axis=0)
 
 # create force field and system
 force_field = ForceField()
 force_field.add_potential(lj)
 force_field.add_potential(harmonic_bond)
-force_field.add_potential(wall_ljwca)
+force_field.add_potential(harmonic_bias)
 system = System(topology, force_field)
 
 # create integrator
@@ -59,14 +60,14 @@ integrator = LangevinIntegrator(step_size=0.002)
 simulation = Simulation(system, integrator)
 simulation.initialize()
 simulation.minimize_energy()
-simulation.system.topology.to_pdb("block_copolymer_single_chain_wall_initial.pdb",
+simulation.system.topology.to_pdb(file_prefix + "initial.pdb",
                                   positions=simulation.state.positions)
 
 # set up reporting
-simulation.thermo_file = "block_copolymer_single_chain_wall_thermo.csv"
+simulation.thermo_file = file_prefix+"_thermo.csv"
 simulation.thermo_frequency = 10000
 simulation.thermo_verbose = True
-simulation.traj_file = "block_copolymer_single_chain_wall_traj.pdb"
+simulation.traj_file = file_prefix + "_traj.pdb"
 simulation.traj_frequency = 10000
 simulation.traj_min_image = True
 

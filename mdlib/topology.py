@@ -5,7 +5,7 @@ from copy import deepcopy
 
 import numpy as np
 
-from projectlib.bead_type import BeadType
+from mdlib.bead_type import BeadType
 
 
 class Bead(object):
@@ -184,9 +184,9 @@ class Topology(object):
     def periodicity(self):
         return self._periodicity
 
-    def _pdb_str(self, model_index=None, positions=None, append=False, min_image=True):
+    def _pdb_str(self, model_index=None, positions=None, min_image=True):
         s = ""
-        if not append and self.box_lengths is not None:
+        if self.box_lengths is not None:
             a = self.box_lengths[0] * 10.0
             b = self.box_lengths[1] * 10.0
             c = self.box_lengths[2] * 10.0
@@ -211,8 +211,10 @@ class Topology(object):
         return s
 
     def to_pdb(self, filename, model_index=None, positions=None, append=False, min_image=True):
-        s = self._pdb_str(model_index=model_index, positions=positions, append=append, min_image=min_image)
-        if append is False:
-            open(filename, 'w').write(s)
+        s = self._pdb_str(model_index=model_index, positions=positions, min_image=min_image)
+        if append:
+            mode = 'a'
         else:
-            open(filename, 'a').write(s)
+            mode = 'w'
+        with open(filename, mode) as f:
+            f.write(s)

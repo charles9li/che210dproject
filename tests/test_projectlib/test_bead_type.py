@@ -1,6 +1,6 @@
 import unittest
 
-from projectlib.bead_type import BeadType
+from mdlib.bead_type import BeadType
 
 
 class TestBeadType(unittest.TestCase):
