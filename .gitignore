@@ -171,3 +171,6 @@ che210dproject.iml
 
 # thermo log files
 *.csv
+
+# text files
+*.txt

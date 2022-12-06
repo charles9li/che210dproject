@@ -145,7 +145,7 @@ class Simulation(object):
         # compile the system
         self.system.initialize()
 
-        # initialize state
+        # initialize state if not preserving current state
         if not preserve_state:
             # set positions
             positions = initialize_positions(self.system.topology)
@@ -155,6 +155,10 @@ class Simulation(object):
             velocities = np.zeros_like(positions)
             self.set_velocities(velocities)
             self.state.steps = 0
+        else:
+            # reset positions to recalculate forces and potential energy
+            positions = self.state.positions
+            self.set_positions(positions)
 
     def set_positions(self, positions):
         # check that number of positions is correct
@@ -207,9 +211,9 @@ class Simulation(object):
             self.state = state
 
             # report
-            if self._thermo_file is not None and steps_elapsed % self.thermo_frequency == 0:
+            if steps_elapsed % self.thermo_frequency == 0:
                 self._thermo_update(time.time() - start_time)
-            if self._traj_file is not None and steps_elapsed % self.traj_frequency == 0:
+            if steps_elapsed % self.traj_frequency == 0:
                 self._traj_update()
 
     @property
