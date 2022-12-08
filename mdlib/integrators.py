@@ -7,7 +7,7 @@ import numpy as np
 
 from numba import jit
 
-import projectlib
+import mdlib
 
 
 @jit(nopython=True)
@@ -78,6 +78,7 @@ class _Integrator(object):
         """
         # get current state of simulation
         state = self.simulation.state
+        curr_steps = state.steps
         positions = state.positions
         velocities = state.velocities
         forces = state.forces
@@ -94,8 +95,8 @@ class _Integrator(object):
             positions, velocities, forces, potential_energy = self.STEP_FUNCTION(force_function, positions, velocities, forces, self.step_size, *additional_args)
 
         # return state
-        kinetic_energy = projectlib.utils.compute_kinetic_energy(velocities)
-        return projectlib.State(positions, velocities, forces, potential_energy, kinetic_energy)
+        kinetic_energy = mdlib.utils.compute_kinetic_energy(velocities)
+        return mdlib.State(curr_steps + steps, positions, velocities, forces, potential_energy, kinetic_energy)
 
 
 @jit(nopython=True)

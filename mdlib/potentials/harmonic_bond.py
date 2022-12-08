@@ -5,8 +5,8 @@ from ._potential_base_classes import _BondedPairPotential
 
 
 class HarmonicBond(_BondedPairPotential):
-    PARAMETERS = ['k', 'r0']
-    ALL_PARAMETERS = PARAMETERS
+    PARAMETER_NAMES = ['k', 'r0']
+    PARAMETER_TYPES = [float, float]
 
     def __init__(self):
         super(HarmonicBond, self).__init__()
@@ -20,13 +20,11 @@ class HarmonicBond(_BondedPairPotential):
             k=k, r0=r0
         )
 
-    def create_force_energy_function(self):
-        self._create_if_compute_and_parameter_arrays()
-        if_compute = self._if_compute
-        parameter_array = self._parameter_array
+    def _create_force_energy_function(self):
+        _if_compute = self._interaction_array
 
-        _k_index = self._get_parameter_index('k')
-        _r0_index = self._get_parameter_index('r0')
+        _k_array = self._parameter_arrays['k']
+        _r0_array = self._parameter_arrays['r0']
 
         @jit(nopython=True)
         def calculate_force_energy(
@@ -35,12 +33,12 @@ class HarmonicBond(_BondedPairPotential):
                 i, j,
                 species_index_i, species_index_j
         ):
-            if not if_compute[species_index_i, species_index_j]:
+            if not _if_compute[species_index_i, species_index_j]:
                 return forces, potential_energy
 
             # get values of parameters
-            k = parameter_array[species_index_i, species_index_j, _k_index]
-            r0 = parameter_array[species_index_i, species_index_j, _r0_index]
+            k = _k_array[species_index_i, species_index_j]
+            r0 = _r0_array[species_index_i, species_index_j]
 
             # calculate distance
             d = np.sqrt(d_sqd)
@@ -55,4 +53,3 @@ class HarmonicBond(_BondedPairPotential):
             return forces, potential_energy
 
         self._force_energy_function = calculate_force_energy
-        return calculate_force_energy
