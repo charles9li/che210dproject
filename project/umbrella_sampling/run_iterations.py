@@ -1,3 +1,4 @@
+import math
 import multiprocessing as mp
 
 import numpy as np
@@ -52,8 +53,8 @@ while current_mse > abs_tol:
     bin_centers, bin_edges = create_bins(1.5, 20.0, 0.1)
     hist, bin_edges = np.histogram(all_x, bins=bin_edges)
     indices = np.argpartition(hist, n_processors)[:n_processors]
-    umbrellas_to_run = bin_centers[indices]
-    print(f"Least sampled bin centers at {' '.join([str(u) for u in umbrellas_to_run])}")
+    umbrellas_to_run = np.around(bin_centers[indices], decimals=math.ceil(math.log10(1 / bin_width)))
+    print(f"Least sampled bin centers at {' '.join([str(np.around(u, decimals=1)) for u in umbrellas_to_run])}")
 
     # run all the simulations
     print("Running simulations with umbrellas at this bin centers ...")
