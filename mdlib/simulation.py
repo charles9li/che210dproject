@@ -131,6 +131,7 @@ class Simulation(object):
         self.thermo_frequency = 1000
         self._thermo_verbose = False
         self._thermo_file = None
+        self._thermo_printed_header = False
 
         # initialize attributes for traj reporting
         self.traj_frequency = 1000
@@ -224,8 +225,9 @@ class Simulation(object):
     def thermo_file(self, filename):
         self._thermo_file = filename
         header = self._create_thermo_header()
-        if self.thermo_verbose:
+        if self.thermo_verbose and not self._thermo_printed_header:
             print(header)
+            self._thermo_printed_header = True
         if self._thermo_file is not None:
             with open(self._thermo_file, 'w') as f:
                 f.write(self._create_thermo_header() + "\n")
@@ -236,8 +238,11 @@ class Simulation(object):
 
     @thermo_verbose.setter
     def thermo_verbose(self, value):
-        if value:
+        if value and not self._thermo_printed_header:
             print(self._create_thermo_header())
+            self._thermo_printed_header = True
+        else:
+            self._thermo_printed_header = False
         self._thermo_verbose = value
 
     @staticmethod

@@ -178,7 +178,13 @@ class Topology(object):
 
     @box_lengths.setter
     def box_lengths(self, new_box_lengths):
-        self._box_lengths = new_box_lengths
+        try:
+            box_length = float(new_box_lengths)
+            self._box_lengths = np.array([box_length] * 3)
+        except TypeError:
+            if len(new_box_lengths) != 3:
+                raise ValueError("box lengths must be a float or have length 3")
+            self._box_lengths = np.array(new_box_lengths, dtype=float)
 
     @property
     def periodicity(self):

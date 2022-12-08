@@ -39,8 +39,8 @@ class HarmonicBias(_Potential):
         _max_len = max(_each_group_len)
 
         _each_group_indices = np.zeros((self.n_groups, _max_len), dtype=int)
-        for g, len_g in zip(_groups, _each_group_len):
-            _each_group_indices[:len_g] = g
+        for i, (g, len_g) in enumerate(zip(_groups, _each_group_len)):
+            _each_group_indices[i, :len_g] = g
 
         _k_array = np.array([self.get_parameter_value('k', i) for i in range(self.n_groups)], dtype=float)
         _r0_array = np.array([self.get_parameter_value('r0', i) for i in range(self.n_groups)], dtype=float)

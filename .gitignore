@@ -174,3 +174,6 @@ che210dproject.iml
 
 # text files
 *.txt
+
+# old files
+*/old/

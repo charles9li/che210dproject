@@ -41,7 +41,7 @@ def _get_key_groups_from_nested_dict(nested_dict, depth):
         if depth == 1:
             key_groups.append([key])
         else:
-            for kg in _get_key_groups_from_nested_dict(nested_dict, depth-1):
+            for kg in _get_key_groups_from_nested_dict(nested_dict[key], depth-1):
                 key_groups.append([key] + list(kg))
     return list(map(lambda x: tuple(x), key_groups))
 
