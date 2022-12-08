@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-from project.umbrella_sampling.utils import load_free_energy_profile_from_files
+from analysis.umbrella_sampling.utils import load_free_energy_profile_from_files
 
 
 plt.figure()

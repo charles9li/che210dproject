@@ -33,15 +33,18 @@ def get_overall_distribution(eps_wall, sequence):
 
 
 if __name__ == '__main__':
-    # bin_centers, bin_edges = create_bins(1.5, 20.0, 0.1)
-    # distributions = get_distribution_from_each_umbrella(1.0, "AB"*5)
-    # plt.figure()
-    # for dist in distributions.values():
-    #     hist, bin_edges = np.histogram(dist, bins=bin_edges)
-    #     plt.hist(bin_edges[:-1], bin_edges, alpha=0.3, weights=hist)
-
     bin_centers, bin_edges = create_bins(1.5, 20.0, 0.1)
-    hist, bin_edges = np.histogram(get_overall_distribution(1.0, "AAAAABBBBB"), bins=bin_edges)
-    plt.hist(bin_edges[:-1], bin_edges, weights=hist)
+    distributions = get_distribution_from_each_umbrella(1.0, "AB"*5)
+    plt.figure()
+    for umbrella, dist in distributions.items():
+        hist, bin_edges = np.histogram(dist, bins=bin_edges)
+        plt.hist(bin_edges[:-1], bin_edges, alpha=0.3, weights=hist, label=f"k={umbrella[0]}, x0={umbrella[1]}")
+    plt.legend(frameon=False, ncol=3)
+    plt.xlabel(r"$x_i$")
+    plt.ylabel("count")
+
+    # bin_centers, bin_edges = create_bins(1.5, 20.0, 0.1)
+    # hist, bin_edges = np.histogram(get_overall_distribution(1.0, "AAAAABBBBB"), bins=bin_edges)
+    # plt.hist(bin_edges[:-1], bin_edges, weights=hist)
 
     plt.show()
