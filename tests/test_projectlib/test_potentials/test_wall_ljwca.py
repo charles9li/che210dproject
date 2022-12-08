@@ -130,6 +130,20 @@ class TestWallLJWCA(unittest.TestCase):
                 plt.savefig('test_wall_lj+wca_energy.png')
         plt.close('all')
 
+    def test_plot_lj_plus_wca(self):
+        r = np.linspace(0.995, 8.0, 1000)
+        _, lj = _compute_force_energy(r, eps=1.0, sigma=1.0, cut=7.5, upper_bound=1000., lambda_lj=1.0, lambda_wca=0.0)
+        _, wca = _compute_force_energy(r, eps=1.0, sigma=1.0, cut=7.5, upper_bound=1000., lambda_lj=0.0, lambda_wca=1.0)
+        plt.figure()
+        plt.axhline(y=0, linestyle='--', c='k')
+        plt.plot(r, wca, label="WCA wall")
+        plt.plot(r, lj, label="LJ wall")
+        plt.xlabel(r"$x / \sigma$")
+        plt.ylabel(r"$u / \epsilon$")
+        plt.legend(frameon=False)
+        plt.tight_layout()
+        plt.show()
+
 
 if __name__ == '__main__':
     unittest.main()

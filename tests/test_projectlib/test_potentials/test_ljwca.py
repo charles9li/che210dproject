@@ -34,7 +34,7 @@ def _compute_force_energy(
     for i, _x in enumerate(r):
         r_i = np.zeros(3)
         r_i[0] = _x
-        f_i, u_i = lj_potential.force_energy_function(np.zeros((2, 3)), 0.0, r_i, _x, 0, 1, 0, 0)
+        f_i, u_i = lj_potential.force_energy_function(np.zeros((2, 3)), 0.0, r_i, _x**2, 0, 1, 0, 0)
         force[i] = f_i[0, 0]
         energy[i] = u_i
 
@@ -114,6 +114,22 @@ class TestPotential(unittest.TestCase):
                 plt.ylabel(r"$u_{LJ}(r)$")
                 plt.savefig("test_lj+wca_energy.png")
         plt.close('all')
+
+    def test_plot_lj_plus_wca(self):
+        r = np.linspace(0.95, 3.0, 1000)
+        _, lj = _compute_force_energy(r, eps=1.0, sigma=1.0, cut=2.5, lambda_lj=1.0, lambda_wca=0.0)
+        _, wca = _compute_force_energy(r, eps=1.0, sigma=1.0, cut=2.5, lambda_lj=0.0, lambda_wca=1.0)
+        lj_plus_wca = lj + wca
+        plt.figure()
+        plt.axhline(y=0, linestyle='--', c='k')
+        plt.plot(r, lj, label="LJ")
+        plt.plot(r, wca, label="WCA")
+        plt.plot(r, lj_plus_wca, label="LJ+WCA")
+        plt.xlabel(r"$r / \sigma$")
+        plt.ylabel(r"$u / \epsilon$")
+        plt.legend(frameon=False)
+        plt.tight_layout()
+        plt.show()
 
 
 if __name__ == '__main__':
